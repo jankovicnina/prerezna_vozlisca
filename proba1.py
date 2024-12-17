@@ -3,60 +3,6 @@ import sys
 class Graf:
     def __init__(self):
         """
-        inicializacija grafa z vozlisci in oznakami
-        """
-        self.vozlisca = []
-        self.oznake = []
-
-
-    # doda vozlisce v seznam vozlisc
-    def dodaj_vozlisce(self, vozlisce):
-        """
-        Doda vozlišče v seznam vozlisc
-        """
-        if vozlisce not in self.vozlisca:
-            self.vozlisca.append(vozlisce)
-
-
-    def dobi_vozlisce(self, oznaka):
-        """
-        Vrne vozlisce z doloceno oznako ali None, ce ne obstaja.
-        """
-        for v in self.vozlisca:
-            if v.oznaka == oznaka:
-                return v
-        return None
-    
-    
-
-
-class Vozlisce:
-    def __init__(self, oznaka):
-        """
-        inicializacija vozlisca z oznako, seznamom sosedov in pre/post vrednostmi
-        """
-        self.oznaka = oznaka
-        self.sosedi = []
-        self.stars = -1
-        self.obiskano = False
-        # zacetni vrednosti pre in post bosta -1, da algoritem lepo deluje
-        self.pre = 0 
-        self.post = 0
-        self.low = float('inf')
-        self.prerezno = False
-
-
-    def dodaj_soseda(self, sosed):
-        if sosed not in self.sosedi:
-            self.sosedi.append(sosed)
-
-
-
-import sys
-
-class Graf:
-    def __init__(self):
-        """
         Initialize the graph with vertices and labels.
         """
         self.vozlisca = []
@@ -136,62 +82,76 @@ class Vozlisce:
 #             # Update low value for a back edge
 #             vozlisce.low = min(vozlisce.low, sosed.pre)
 
-def dfs_prerezna_vozlisca(G):
-    """
-    Inicializira DFS za celoten graf in izračuna pre in low vrednosti.
-    """
-    ura = [0]  # Začetna ura za previsit in low
-    for vozlisce in G.vozlisca:
-        if not vozlisce.obiskano:  # Če vozlišče še ni obiskano, zaženi DFS
-            dfs_prerezna(G, vozlisce, ura)
+
+# def dfs_prerezna_vozlisca(G):
+#     """
+#     Inicializira DFS za celoten graf in izračuna pre, low ter post vrednosti iterativno.
+#     """
+#     ura = [0]  # Števec za čas odkritja in zaključka
+#     for vozlisce in G.vozlisca:
+#         if vozlisce.obiskano:
+#             continue
+#         prerezna_vozisca(G, vozlisce, ura)
 
 
-def dfs_prerezna_vozlisca(G):
+def prerezna_vozlisca_iterativno(vozlisce, ura):
     """
-    Inicializira DFS za celoten graf in izračuna pre, low ter post vrednosti.
+    Iterativna funkcija DFS za iskanje prereznih vozlišč.
     """
-    ura = [0]  # Začetna ura za previsit in low
-    for vozlisce in G.vozlisca:
-        if not vozlisce.obiskano:  # Če vozlišče še ni obiskano, zaženi DFS
-            dfs_prerezna(G, vozlisce, ura)
-
-
-def dfs_prerezna(G, vozlisce, ura, parent=None):
-    """
-    Rekurzivna DFS funkcija za nastavitev pre, low in post vrednosti ter preverjanje prereznih vozlišč.
-    """
-    # Nastavi pre in low za trenutno vozlišče
+    sklad = [(vozlisce, None)]  # (trenutno_vozlisce, starš)
     vozlisce.obiskano = True
-    vozlisce.pre = ura[0]
-    vozlisce.low = ura[0]
+
+    # Inicializacija dodatnih struktur
+    vozlisce.pre = vozlisce.low = ura[0]
     ura[0] += 1
+    children_map = {vozlisce: 0}  # Beleži število otrok za vsako vozlišče
 
-    children = 0  # Število otrok v DFS drevesu
+    while sklad:
+        trenutno, stars = sklad[-1]  # Pogledamo vozlišče na vrhu sklada, brez odstranitve
 
-    for sosed in vozlisce.sosedi:
-        if not sosed.obiskano:  # Če sosed še ni obiskan
-            sosed.stars = vozlisce
-            children += 1
+        child_processed = True  # Označuje, če so vsi sosedje obdelani
+        for sosed in trenutno.sosedi:
+            if sosed == stars:  # Ignoriraj povezavo nazaj k staršu
+                continue
+            if not sosed.obiskano:
+                # Če sosed še ni obiskan, ga dodamo na sklad
+                sklad.append((sosed, trenutno))
+                sosed.obiskano = True
+                sosed.pre = sosed.low = ura[0]
+                ura[0] += 1
 
-            # Rekurzivno pokliči DFS za soseda
-            dfs_prerezna(G, sosed, ura, vozlisce)
+                children_map[trenutno] += 1  # Povečaj število otrok
+                child_processed = False  # Še imamo soseda za obdelavo
+                break  # Nadaljujemo z novim sosedom
 
-            # Posodobi low za trenutno vozlišče
-            vozlisce.low = min(vozlisce.low, sosed.low)
+            else:  # Back edge: posodobi low vrednost trenutnega vozlišča
+                trenutno.low = min(trenutno.low, sosed.pre)
 
-            # Preveri, če je vozlišče prerezno
-            if parent is None and children > 1:
-                vozlisce.prerezno = True
-            if parent is not None and sosed.low >= vozlisce.pre:
-                vozlisce.prerezno = True
+        if child_processed:  # Če so vsi sosedje obdelani, izvedemo "povratek"
+            sklad.pop()  # Odstranimo trenutno vozlišče s sklada
 
-        elif sosed != parent:  # Povratna povezava
-            vozlisce.low = min(vozlisce.low, sosed.pre)
+            # Posodobi low starševskega vozlišča, če obstaja
+            if stars:
+                stars.low = min(stars.low, trenutno.low)
 
-    # Po koncu obiskovanja sosedov nastavi post vrednost
-    vozlisce.post = ura[0]
-    ura[0] += 1
+                # Preverjanje prereznih vozlišč:
+                # Primer 2: Non-root vozlišče
+                if stars.stars is not None and trenutno.low >= stars.pre:
+                    stars.prerezno = True
 
+            # Primer 1: Root vozlišče
+            if stars is None and children_map[trenutno] > 1:
+                trenutno.prerezno = True
+
+
+def dfs_prerezna_vozlisca(G):
+    """
+    Inicializira DFS za celoten graf in iterativno izračuna pre, low in zazna prerezna vozlišča.
+    """
+    ura = [0]  # Števec za čas odkritja
+    for vozlisce in G.vozlisca:
+        if not vozlisce.obiskano:
+            prerezna_vozlisca_iterativno(vozlisce, ura)
 
 
 
