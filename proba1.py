@@ -3,211 +3,130 @@ import sys
 class Graf:
     def __init__(self):
         """
-        Initialize the graph with vertices and labels.
+        Inicializacija grafa s slovarjem za vozlisca
         """
-        self.vozlisca = []
-        self.oznake = []
+        self.vozlisca = {}
 
-    def dodaj_vozlisce(self, vozlisce):
+    def dodaj_vozlisce(self, oznaka):
         """
-        Add a vertex to the list of vertices.
+        Dodajanje vozlisca in vracanje njegove oznake
         """
-        if vozlisce not in self.vozlisca:
-            self.vozlisca.append(vozlisce)
-
-    def dobi_vozlisce(self, oznaka):
-        """
-        Return the vertex with a given label or None if it doesn't exist.
-        """
-        for v in self.vozlisca:
-            if v.oznaka == oznaka:
-                return v
-        return None
+        if oznaka not in self.vozlisca:
+            self.vozlisca[oznaka] = Vozlisce(oznaka)
+        return self.vozlisca[oznaka]
 
 
 class Vozlisce:
     def __init__(self, oznaka):
         """
-        Initialize a vertex with a label, neighbors, and pre/post values.
+        Inicializacija vozlisca z oznako, sosedi in atributi za izracun prereznosti
         """
         self.oznaka = oznaka
         self.sosedi = []
-        self.stars = None  # Parent node in DFS
+        self.stars = None 
         self.obiskano = False
-        self.pre = 0  # Discovery time
-        self.low = float('inf')  # Low value
-        self.prerezno = False  # Whether the node is an articulation point
+        self.pre = 0 
+        self.low = sys.maxsize
+        self.prerezno = False 
+        self.otroci = 0
 
     def dodaj_soseda(self, sosed):
-        if sosed not in self.sosedi:
-            self.sosedi.append(sosed)
+        """
+        Dodajanje soseda v seznam sosedov
+        """
+        self.sosedi.append(sosed)
 
 
-# def prerezna_vozisca(vozlisce, ura):
-#     """
-#     DFS-based function to calculate low and pre values and identify articulation points.
-#     """
-#     # Mark the current node as visited
-#     vozlisce.obiskano = True
-
-#     # Initialize discovery and low values
-#     vozlisce.pre = ura[0]
-#     vozlisce.low = ura[0]
-#     ura[0] += 1
-
-#     children = 0  # Count of children in DFS tree
-
-#     for sosed in vozlisce.sosedi:
-#         if not sosed.obiskano:
-#             # Set parent and increase the child count
-#             sosed.stars = vozlisce
-#             children += 1
-
-#             # Recur for the child node
-#             prerezna_vozisca(sosed, ura)
-
-#             # Update the low value of the current node
-#             vozlisce.low = min(vozlisce.low, sosed.low)
-
-#             # Articulation point check
-#             # Case 1: Root node with more than one child
-#             if vozlisce.stars is None and children > 1:
-#                 vozlisce.prerezno = True
-
-#             # Case 2: Non-root node where a child's low value is greater or equal to the node's pre value
-#             if vozlisce.stars is not None and sosed.low >= vozlisce.pre:
-#                 vozlisce.prerezno = True
-
-#         elif sosed != vozlisce.stars:
-#             # Update low value for a back edge
-#             vozlisce.low = min(vozlisce.low, sosed.pre)
-
-
-# def dfs_prerezna_vozlisca(G):
-#     """
-#     Inicializira DFS za celoten graf in izračuna pre, low ter post vrednosti iterativno.
-#     """
-#     ura = [0]  # Števec za čas odkritja in zaključka
-#     for vozlisce in G.vozlisca:
-#         if vozlisce.obiskano:
-#             continue
-#         prerezna_vozisca(G, vozlisce, ura)
-
-
-def prerezna_vozlisca_iterativno(vozlisce, ura):
+def iterativen_dfs(graf, zacetna_oznaka):
     """
-    Iterativna funkcija DFS za iskanje prereznih vozlišč.
+    Izvede iterativen DFS na grafu, kjer se izracuna se vrednosti "pre", "low" in doloci prerezna vozlisca
     """
-    sklad = [(vozlisce, None)]  # (trenutno_vozlisce, starš)
-    vozlisce.obiskano = True
+    # stevec za cas, da se pre/low vrednosti zacnejo z 0
+    cas = -1
 
-    # Inicializacija dodatnih struktur
-    vozlisce.pre = vozlisce.low = ura[0]
-    ura[0] += 1
-    children_map = {vozlisce: 0}  # Beleži število otrok za vsako vozlišče
+    zacetek = graf.vozlisca[zacetna_oznaka]
 
-    while sklad:
-        trenutno, stars = sklad[-1]  # Pogledamo vozlišče na vrhu sklada, brez odstranitve
+    # stack za izvjaanje iterativnega dfs; rekurzija je prepocasna :|
+    stack = [(zacetek, "vstop")]
 
-        child_processed = True  # Označuje, če so vsi sosedje obdelani
-        for sosed in trenutno.sosedi:
-            if sosed == stars:  # Ignoriraj povezavo nazaj k staršu
-                continue
-            if not sosed.obiskano:
-                # Če sosed še ni obiskan, ga dodamo na sklad
-                sklad.append((sosed, trenutno))
-                sosed.obiskano = True
-                sosed.pre = sosed.low = ura[0]
-                ura[0] += 1
+    while stack:
+        vozlisce, stanje = stack.pop()
 
-                children_map[trenutno] += 1  # Povečaj število otrok
-                child_processed = False  # Še imamo soseda za obdelavo
-                break  # Nadaljujemo z novim sosedom
+        # vstop v vozlisce
+        if stanje == "vstop":
+            #ce vozlisce se ni obiskano, ga obisci in doloci pre, low
+            if not vozlisce.obiskano:
+                vozlisce.obiskano = True
+                cas += 1
+                vozlisce.pre = vozlisce.low = cas
 
-            else:  # Back edge: posodobi low vrednost trenutnega vozlišča
-                trenutno.low = min(trenutno.low, sosed.pre)
+                # dodajanje izstopa za vozlisce na sklad
+                stack.append((vozlisce, "izstop"))
 
-        if child_processed:  # Če so vsi sosedje obdelani, izvedemo "povratek"
-            sklad.pop()  # Odstranimo trenutno vozlišče s sklada
+                # dodajanje vstopa v vse sosede
+                for sosed in vozlisce.sosedi:
+                    if not sosed.obiskano:
+                        # dolocimo se starsa vozlisca za kasnejse racunanje low
+                        sosed.stars = vozlisce
+                        stack.append((sosed, "vstop"))
+                    elif sosed != vozlisce.stars:
+                        # ce je povratna povezava, updejtamo low
+                        vozlisce.low = min(vozlisce.low, sosed.pre)
 
-            # Posodobi low starševskega vozlišča, če obstaja
-            if stars:
-                stars.low = min(stars.low, trenutno.low)
+        # izstop iz vozlisca
+        elif stanje == "izstop":
+            cas += 1
+            
+            # updejtanje low za starsa
+            if vozlisce.stars:
+                vozlisce.stars.low = min(vozlisce.stars.low, vozlisce.low)
+                vozlisce.stars.otroci += 1 
 
-                # Preverjanje prereznih vozlišč:
-                # Primer 2: Non-root vozlišče
-                if stars.stars is not None and trenutno.low >= stars.pre:
-                    stars.prerezno = True
+                # preverjanje prereznosti starsa; vozlisce.low >= stars.pre in se ne sme biti koren (drugi pogoj je nujen pri CIKLIH)
+                if vozlisce.low >= vozlisce.stars.pre and vozlisce.stars.stars is not None:
+                    vozlisce.stars.prerezno = True
 
-            # Primer 1: Root vozlišče
-            if stars is None and children_map[trenutno] > 1:
-                trenutno.prerezno = True
+            # robni primer: vozlisce je koren
+            if vozlisce.stars is None and vozlisce.otroci > 1:
+                vozlisce.prerezno = True
 
-
-def dfs_prerezna_vozlisca(G):
+def resevanje():
     """
-    Inicializira DFS za celoten graf in iterativno izračuna pre, low in zazna prerezna vozlišča.
+    Prebere vhodne podatke, zgradi graf in izvede iterativen dfs
+    Vrne graf z izracunanimi prereznimi vozisci
     """
-    ura = [0]  # Števec za čas odkritja
-    for vozlisce in G.vozlisca:
-        if not vozlisce.obiskano:
-            prerezna_vozlisca_iterativno(vozlisce, ura)
 
+    data = sys.stdin.read().strip().split("\n")
 
-
-def graf():
-    """
-    Reads input, constructs the graph, and initializes discovery.
-    """
-    input = sys.stdin.read
-    data = input().strip().split("\n")
-
-    # Number of vertices (n) and edges (m)
+    # stevilo vozlis (n) in povezav (m)
     n, m = map(int, data[0].split())
 
     G = Graf()
 
-    # Read edges and add vertices and neighbors
+    # dodajanje vozlisc v graf
+    for i in range(n):
+        G.dodaj_vozlisce(i)
+
+    # dodajanje povezav med vozlisci
     for i in range(1, m + 1):
         u, v = map(int, data[i].split())
+        G.vozlisca[u].dodaj_soseda(G.vozlisca[v])
+        G.vozlisca[v].dodaj_soseda(G.vozlisca[u])
 
-        # Get or create vertices
-        prvo = G.dobi_vozlisce(u)
-        drugo = G.dobi_vozlisce(v)
-
-        if prvo is None:
-            prvo = Vozlisce(u)
-            G.dodaj_vozlisce(prvo)
-        
-        if drugo is None:
-            drugo = Vozlisce(v)
-            G.dodaj_vozlisce(drugo)
-
-        # Add neighbors
-        prvo.dodaj_soseda(drugo)
-        drugo.dodaj_soseda(prvo)
-
-    # Find articulation points
-    dfs_prerezna_vozlisca(G)
+    # poisce prerezna vozlisca
+    iterativen_dfs(G, 0)
 
     return G
 
 
 if __name__ == "__main__":
-    G = graf()
+    G = resevanje()
 
-    resitev = []
-    for v in G.vozlisca:
-        if v.prerezno:
-            resitev.append(v.oznaka)
-    
-    if len(resitev) == 0:
-        print(-1)
+    # zbere resitve v seznam in ga sortira 
+    resitev = [v.oznaka for v in G.vozlisca.values() if v.prerezno]    
+    resitev.sort()
 
+    if resitev:
+        print(" ".join(map(str, resitev)))
     else:
-        koncno = " ".join(str(i) for i in resitev)
-        print(koncno)
-
-    # Print results
-    # for v in G.vozlisca:
-    #     print(f"vozlisce: {v.oznaka}, low: {v.low}, pre: {v.pre}, prerezno: {v.prerezno}")
+        print(-1)
