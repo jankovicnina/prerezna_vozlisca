@@ -64,7 +64,11 @@ and the output will be like
 To test the solution:
 1. Place articulation_point.py (solution file) in the same folder as test_runner.py and the Tests folder.
 2. Run the command:
-```python test_runner.py -script articulation_point.py -test_nb 1```
+```
+python test_runner.py -script articulation_point.py -test_nb 1
+```
 to test a single test or
-```python test_runner.py -script articulation_point.py```
+```
+python test_runner.py -script articulation_point.py
+```
 to test all the tests in the Tests file. Of course, based on your computer, use python or python3.
