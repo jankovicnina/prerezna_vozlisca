@@ -1,4 +1,4 @@
-## Articulation Points in Graphs
+### Articulation Points in Graphs
 This repository contains a Python implementation to determine the articulation points in an undirected and connected graph. An **articulation point** is a vertex that, when removed along with its incident edges, disconnects the graph.
 
 # Problem Description
@@ -19,31 +19,31 @@ Given a graph :
 1. Discovery Time (pre): The time when a vertex is first visited during DFS.
 2. Lowest Point Reachable (low): The smallest discovery time reachable from a vertex using back edges.
 3. Articulation Point Criteria:
-- A non-root vertex is an articulation point if there exists a child such that parent.pre <= child.low.
-- A root vertex is an articulation point if it has more than one child in the DFS tree.
+  - A non-root vertex is an articulation point if there exists a child such that parent.pre <= child.low.
+  - A root vertex is an articulation point if it has more than one child in the DFS tree.
 
 ## Code Structure
 1. Graph Class:
-- Manages vertices and edges.
-- Adds vertices and connects them via edges.
+  - Manages vertices and edges.
+  - Adds vertices and connects them via edges.
 
 2. Vertex Class:
-- Stores neighbors and attributes (pre, low, parent, etc.) for articulation point calculation.
+  - Stores neighbors and attributes (pre, low, parent, etc.) for articulation point calculation.
   
 3. Iterative DFS:
-- Avoids recursion to handle large inputs efficiently.
-- Computes pre, low values and identifies articulation points.
+  - Avoids recursion to handle large inputs efficiently.
+  - Computes pre, low values and identifies articulation points.
 
 4. Main Function:
-- Reads input data.
-- Builds the graph and performs DFS.
-- Outputs sorted articulation points or  if none exist.
+  - Reads input data.
+  - Builds the graph and performs DFS.
+  - Outputs sorted articulation points or  if none exist.
 
 
-## Usage
+### Usage
 Provide an input through standard input in the specified format. The code will output articulation points sorted in ascending order.
 
-# Example
+## Example
 Input should look like
 '5 5
 0 1
