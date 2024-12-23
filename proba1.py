@@ -3,166 +3,85 @@ import sys
 class Graph:
     def __init__(self):
         """
-        Initialize the graph with vertices and labels.
+        Initializes the graph with a dictionary for vertices.
         """
-        self.vozlisca = []
-        self.oznake = []
+        self.vertices = {}
 
-    def dodaj_vozlisce(self, vozlisce):
+    def add_vertex(self, label):
         """
-        Add a vertex to the list of vertices.
+        Adds a vertex and returns its label.
         """
-        if vozlisce not in self.vozlisca:
-            self.vozlisca.append(vozlisce)
-
-    def dobi_vozlisce(self, oznaka):
-        """
-        Return the vertex with a given label or None if it doesn't exist.
-        """
-        for v in self.vozlisca:
-            if v.oznaka == oznaka:
-                return v
-        return None
-
+        if label not in self.vertices:
+            self.vertices[label] = Vertex(label)
+        return self.vertices[label]
 
 class Vertex:
-    def __init__(self, oznaka):
+    def __init__(self, label):
         """
-        Initialize a vertex with a label, neighbors, and pre/post values.
+        Initializes a vertex with its label, neighbors, and attributes for articulation point calculation.
         """
-        self.oznaka = oznaka
-        self.sosedi = []
-        self.stars = None  # Parent node in DFS
-        self.obiskano = False
+        self.label = label
+        self.neighbors = []
+        self.parent = None 
+        self.visited = False
         self.pre = 0  # Discovery time
-        self.low = float('inf')  # Low value
-        self.prerezno = False  # Whether the node is an articulation point
+        self.low = sys.maxsize  # Lowest point reachable
+        self.articulation = False  # Indicates if it's an articulation point
+        self.children = 0
 
-    def dodaj_soseda(self, sosed):
-        if sosed not in self.sosedi:
-            self.sosedi.append(sosed)
+    def add_neighbor(self, neighbor):
+        """
+        Adds a neighbor to the list of neighbors.
+        """
+        self.neighbors.append(neighbor)
 
-
-# def prerezna_vozisca(vozlisce, ura):
-#     """
-#     DFS-based function to calculate low and pre values and identify articulation points.
-#     """
-#     # Mark the current node as visited
-#     vozlisce.obiskano = True
-
-#     # Initialize discovery and low values
-#     vozlisce.pre = ura[0]
-#     vozlisce.low = ura[0]
-#     ura[0] += 1
-
-#     children = 0  # Count of children in DFS tree
-
-#     for sosed in vozlisce.sosedi:
-#         if not sosed.obiskano:
-#             # Set parent and increase the child count
-#             sosed.stars = vozlisce
-#             children += 1
-
-#             # Recur for the child node
-#             prerezna_vozisca(sosed, ura)
-
-#             # Update the low value of the current node
-#             vozlisce.low = min(vozlisce.low, sosed.low)
-
-#             # Articulation point check
-#             # Case 1: Root node with more than one child
-#             if vozlisce.stars is None and children > 1:
-#                 vozlisce.prerezno = True
-
-#             # Case 2: Non-root node where a child's low value is greater or equal to the node's pre value
-#             if vozlisce.stars is not None and sosed.low >= vozlisce.pre:
-#                 vozlisce.prerezno = True
-
-#         elif sosed != vozlisce.stars:
-#             # Update low value for a back edge
-#             vozlisce.low = min(vozlisce.low, sosed.pre)
-
-
-# def dfs_prerezna_vozlisca(G):
-#     """
-#     Inicializira DFS za celoten graf in izračuna pre, low ter post vrednosti iterativno.
-#     """
-#     ura = [0]  # Števec za čas odkritja in zaključka
-#     for vozlisce in G.vozlisca:
-#         if vozlisce.obiskano:
-#             continue
-#         prerezna_vozisca(G, vozlisce, ura)
-
-
-def prerezna_vozlisca_iterativno(vozlisce, ura):
+def iterative_dfs(graph, start_label):
     """
-    Iterativna funkcija DFS za iskanje prereznih vozlišč.
+    Performs an iterative DFS on the graph to compute 'pre', 'low' values and identify articulation points.
     """
-    sklad = [(vozlisce, None)]  # (trenutno_vozlisce, starš)
-    vozlisce.obiskano = True
+    time = -1
+    start = graph.vertices[start_label]
+    stack = [(start, "enter")]
 
-    # Inicializacija dodatnih struktur
-    vozlisce.pre = vozlisce.low = ura[0]
-    ura[0] += 1
-    children_map = {vozlisce: 0}  # Beleži število otrok za vsako vozlišče
+    while stack:
+        vertex, state = stack.pop()
 
-    while sklad:
-        trenutno, stars = sklad[-1]  # Pogledamo vozlišče na vrhu sklada, brez odstranitve
+        if state == "enter":
+            if not vertex.visited:
+                vertex.visited = True
+                time += 1
+                vertex.pre = vertex.low = time
+                stack.append((vertex, "exit"))
 
-        child_processed = True  # Označuje, če so vsi sosedje obdelani
-        for sosed in trenutno.sosedi:
-            if sosed == stars:  # Ignoriraj povezavo nazaj k staršu
-                continue
-            if not sosed.obiskano:
-                # Če sosed še ni obiskan, ga dodamo na sklad
-                sklad.append((sosed, trenutno))
-                sosed.obiskano = True
-                sosed.pre = sosed.low = ura[0]
-                ura[0] += 1
+                for neighbor in vertex.neighbors:
+                    if not neighbor.visited:
+                        neighbor.parent = vertex
+                        stack.append((neighbor, "enter"))
+                    elif neighbor != vertex.parent:
+                        vertex.low = min(vertex.low, neighbor.pre)
 
-                children_map[trenutno] += 1  # Povečaj število otrok
-                child_processed = False  # Še imamo soseda za obdelavo
-                break  # Nadaljujemo z novim sosedom
+        elif state == "exit":
+            time += 1
+            if vertex.parent:
+                vertex.parent.low = min(vertex.parent.low, vertex.low)
+                vertex.parent.children += 1
 
-            else:  # Back edge: posodobi low vrednost trenutnega vozlišča
-                trenutno.low = min(trenutno.low, sosed.pre)
+                # vertex is not the root
+                if vertex.low >= vertex.parent.pre and vertex.parent.parent is not None:
+                    vertex.parent.articulation = True
+            
+            # vertex is the root
+            if vertex.parent is None and vertex.children > 1:
+                vertex.articulation = True
 
-        if child_processed:  # Če so vsi sosedje obdelani, izvedemo "povratek"
-            sklad.pop()  # Odstranimo trenutno vozlišče s sklada
-
-            # Posodobi low starševskega vozlišča, če obstaja
-            if stars:
-                stars.low = min(stars.low, trenutno.low)
-
-                # Preverjanje prereznih vozlišč:
-                # Primer 2: Non-root vozlišče
-                if stars.stars is not None and trenutno.low >= stars.pre:
-                    stars.prerezno = True
-
-            # Primer 1: Root vozlišče
-            if stars is None and children_map[trenutno] > 1:
-                trenutno.prerezno = True
-
-
-def dfs_prerezna_vozlisca(G):
+def solve():
     """
-    Inicializira DFS za celoten graf in iterativno izračuna pre, low in zazna prerezna vozlišča.
+    Reads input data, builds the graph, and performs iterative DFS.
+    Returns the graph with identified articulation points.
     """
-    ura = [0]  # Števec za čas odkritja
-    for vozlisce in G.vozlisca:
-        if not vozlisce.obiskano:
-            prerezna_vozlisca_iterativno(vozlisce, ura)
+    data = sys.stdin.read().strip().split("\n")
 
-
-
-def graf():
-    """
-    Reads input, constructs the graph, and initializes discovery.
-    """
-    input = sys.stdin.read
-    data = input().strip().split("\n")
-
-    # Number of vertices (n) and edges (m)
+    # number of vertices (n) and edges (m)
     n, m = map(int, data[0].split())
 
     G = Graph()
@@ -170,46 +89,20 @@ def graf():
     for i in range(n):
         G.add_vertex(i)
 
-    # Read edges and add vertices and neighbors
     for i in range(1, m + 1):
         u, v = map(int, data[i].split())
+        G.vertices[u].add_neighbor(G.vertices[v])
+        G.vertices[v].add_neighbor(G.vertices[u])
 
-        # Get or create vertices
-        prvo = G.dobi_vozlisce(u)
-        drugo = G.dobi_vozlisce(v)
-
-        if prvo is None:
-            prvo = Vozlisce(u)
-            G.dodaj_vozlisce(prvo)
-        
-        if drugo is None:
-            drugo = Vozlisce(v)
-            G.dodaj_vozlisce(drugo)
-
-        # Add neighbors
-        prvo.dodaj_soseda(drugo)
-        drugo.dodaj_soseda(prvo)
-
-    # Find articulation points
-    dfs_prerezna_vozlisca(G)
-
+    iterative_dfs(G, 0)
     return G
 
 if __name__ == "__main__":
-    G = graf()
+    G = solve()
+    result = [v.label for v in G.vertices.values() if v.articulation]    
+    result.sort()
 
-    resitev = []
-    for v in G.vozlisca:
-        if v.prerezno:
-            resitev.append(v.oznaka)
-    
-    if len(resitev) == 0:
-        print(-1)
-
+    if result:
+        print(" ".join(map(str, result)))
     else:
-        koncno = " ".join(str(i) for i in resitev)
-        print(koncno)
-
-    # Print results
-    # for v in G.vozlisca:
-    #     print(f"vozlisce: {v.oznaka}, low: {v.low}, pre: {v.pre}, prerezno: {v.prerezno}")
+        print(-1)
