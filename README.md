@@ -19,25 +19,25 @@ Given a graph :
 1. Discovery Time (pre): The time when a vertex is first visited during DFS.
 2. Lowest Point Reachable (low): The smallest discovery time reachable from a vertex using back edges.
 3. Articulation Point Criteria:
-  - A non-root vertex is an articulation point if there exists a child such that parent.pre <= child.low.
-  - A root vertex is an articulation point if it has more than one child in the DFS tree.
+   - A non-root vertex is an articulation point if there exists a child such that parent.pre <= child.low.
+   - A root vertex is an articulation point if it has more than one child in the DFS tree.
 
 ## Code Structure
 1. Graph Class:
-  - Manages vertices and edges.
-  - Adds vertices and connects them via edges.
+   - Manages vertices and edges.
+   - Adds vertices and connects them via edges.
 
 2. Vertex Class:
-  - Stores neighbors and attributes (pre, low, parent, etc.) for articulation point calculation.
+   - Stores neighbors and attributes (pre, low, parent, etc.) for articulation point calculation.
   
-3. Iterative DFS:
-  - Avoids recursion to handle large inputs efficiently.
-  - Computes pre, low values and identifies articulation points.
+4. Iterative DFS:
+   - Avoids recursion to handle large inputs efficiently.
+   - Computes pre, low values and identifies articulation points.
 
 4. Main Function:
-  - Reads input data.
-  - Builds the graph and performs DFS.
-  - Outputs sorted articulation points or  if none exist.
+   - Reads input data.
+   - Builds the graph and performs DFS.
+   - Outputs sorted articulation points or  if none exist.
 
 
 ### Usage
@@ -64,7 +64,7 @@ and the output will be like
 To test the solution:
 1. Place articulation_point.py (solution file) in the same folder as test_runner.py and the Tests folder.
 2. Run the command:
-'python test_runner.py -script articulation_point.py -test_nb 1'
+```python test_runner.py -script articulation_point.py -test_nb 1```
 to test a single test or
-'python test_runner.py -script articulation_point.py'
+```python test_runner.py -script articulation_point.py```
 to test all the tests in the Tests file. Of course, based on your computer, use python or python3.
