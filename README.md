@@ -45,15 +45,19 @@ Provide an input through standard input in the specified format. The code will o
 
 ## Example
 Input should look like
-'5 5
+```
+5 5
 0 1
 0 2
 0 3
 1 4
-2 3 '
+2 3 
+```
 
 and the output will be like
-'0 1'
+```
+0 1
+```
 
 
 ## Testing
