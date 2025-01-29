@@ -7,22 +7,22 @@ from time import time
 
 
 tests_path = 'Tests'
-python_path = 'python'
+python_path = 'python3'
 
-def run_tests(script_name, python_path = 'python'):
+def run_tests(script_name, python_path = 'python3'):
     # Najdemo vse testne primere
     tests = sorted([i for i in os.listdir(tests_path) if i.endswith('in')])    
     n_tests = len(tests)
     
     # Poženemo test za vsak testni primer
     for i in range(n_tests):
-        run_test(script_name, python_path=python_path, test_nb=i+1)
+        run_test(script_name, python_path=python_path, test_nb=i)
     
 
 
 
 
-def run_test(script_name, python_path = 'python', test_nb = 0):
+def run_test(script_name, python_path = 'python3', test_nb = 0):
 
     # Oblikujemo ime testa, glede na njegovo številko
     if test_nb < 10:
@@ -33,7 +33,7 @@ def run_test(script_name, python_path = 'python', test_nb = 0):
        
        # Odpremo .out testno datoteko in preberemo izhod
         with open(f'{tests_path}/{test_name.replace("in", "out")}', 'r') as out_file:
-            result = out_file.read()
+            result = out_file.read().strip()
 
         # Odpremo .in testno datoteko ter preberemo vhodne podatke
         with open(f'{tests_path}/{test_name}', 'r') as test_file:
@@ -66,20 +66,35 @@ def run_test(script_name, python_path = 'python', test_nb = 0):
             
             # Če napake ni, potem izvlečemo rezultat in ga primerjamo z pravilnim
             else:                                          
-                output = stdout#.splitlines()
+                output = stdout.strip()#.splitlines()
 
                 # Preverimo, da je rezultat pravilen
-                if result != output:
+                if result == "negativen cikel" and output != result:
                     print(f'Test {test_name} je vrnil napačen odgovor! Čas: {str(elapsed)}')
                     print(f'Test {test_name} je vrnil: {output}')
-                    print(f'Pravilen odgovor je: {result}')                                        
+                    print(f'Pravilen odgovor je: {result}')     
+
+                elif output == "negativen cikel" and result!=output:
+                    print(f'Test {test_name} je vrnil napačen odgovor! Čas: {str(elapsed)}')
+                    print(f'Test {test_name} je vrnil: {output}')
+                    print(f'Pravilen odgovor je: {result}')    
+
+                elif result == "negativen cikel" and output == result:
+                    print(f'Test {test_name} uspešen. Čas: {str(round(elapsed, 3))} sekunde.')
+                    
+
+                elif abs(float(result) - float(output)) > 0.00001:
+                    print(f'Test {test_name} je vrnil napačen odgovor! Čas: {str(elapsed)}')
+                    print(f'Test {test_name} je vrnil: {output}')
+                    print(f'Pravilen odgovor je: {result}. Razlika: {abs(float(result) - float(output))}')        
+                                                     
                 
                 else:
-                    print(f'Test {test_name} uspešen. Čas: {str(round(elapsed, 3))} sekunde.')
+                    print(f'Test {test_name} uspešen. Razlika: {abs(float(result) - float(output))}. Čas: {str(round(elapsed, 3))} sekunde.')
+               
 
     else:
-        print(f'Testna datoteka {test_name} ne obstaja!')            
-
+        print(f'Testna datoteka {test_name} ne obstaja!')      
 
        
 
